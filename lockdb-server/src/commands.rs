@@ -7,6 +7,8 @@ pub enum Command {
     Clear,
     Help,
     Use,
+    Add,
+    Column,
 }
 #[derive(Debug, Clone)]
 pub struct Commands {
@@ -23,6 +25,8 @@ impl Command {
             "database" => Ok(Command::Database),
             "clear" => Ok(Command::Clear),
             "use" => Ok(Command::Use),
+            "add" => Ok(Command::Add),
+            "column" => Ok(Command::Column),
             "?" | "/?" | "help" => Ok(Command::Help),
             _ => Err(val)
         }
@@ -36,40 +40,5 @@ impl Commands {
             _c: Vec::new(),
             _v: Vec::new()
         }
-    }
-}
-
-impl FromIterator<String> for Commands {
-    
-    fn from_iter<T: IntoIterator<Item = String>>(iter: T) -> Self {
-        let mut cmds: Vec<Command> = Vec::new();
-        let mut vals = Vec::new();
-        for i in iter {
-            match i.as_str() {
-                "exit" | "quit" => {
-                    cmds.push(Command::Exit);
-                }
-                // "create" => {
-                //     cmds.push(Command::Create);
-                // }
-                // "table" => {
-                //     cmds.push(Command::Table);
-                // }
-                // "database" => {
-                //     cmds.push(Command::Database);
-                // }
-                // "clear" => {
-                //     cmds.push(Command::Clear);
-                // }
-                // "?" | "/?" | "help" => {
-                //     cmds.push(Command::Help);
-                // }
-                _ => {
-                    vals.push(i);
-                }
-            }
-        }
-
-        Self { _c: cmds, _v: vals }
     }
 }

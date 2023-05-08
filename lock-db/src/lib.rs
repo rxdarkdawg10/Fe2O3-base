@@ -12,7 +12,18 @@ pub struct Table {
 }
 
 #[derive(Debug)]
-pub struct Columns;
+pub struct Columns {
+    pub colname: String,
+    pub coltype: Column,
+    pub colsize: u64
+}
+
+#[derive(Debug, Clone, Copy)]
+pub enum Column {
+    String,
+    Number,
+    Binary
+}
 
 impl Database {
     pub fn new(dbname: String) -> Self {
@@ -32,6 +43,42 @@ impl Table {
         }
     }
 }
+
+
+ 
+
+impl Columns {
+    pub fn new(colname: String, _ty: Column, size: u64) -> Self {
+        Self { colname, coltype: _ty, colsize: size }
+    }
+}
+
+
+impl TryInto<Column> for String {
+    type Error = ();
+    
+    fn try_into(self) -> Result<Column, Self::Error> {
+        match self.as_str() {
+            "number" => Ok(Column::Number),
+            "string" => Ok(Column::String),
+            "binary" => Ok(Column::Binary),
+            _ => Err(())
+        }
+    }
+    // type Error = ();
+
+    // fn try_into(self) -> Result<Column, Self::Error> {
+    //         match self.as_str() {
+    //         "number" => {
+    //             Ok(Column::Number)
+    //         }
+    //     }
+
+    //     Err(())
+    // }
+
+}
+
 
 // #[cfg(test)]
 // mod tests {

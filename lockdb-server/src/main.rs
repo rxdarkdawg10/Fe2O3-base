@@ -1,7 +1,7 @@
 mod server; 
 mod commands;
-use std::{ io::Write, str::Split };
-use lock_db::{Database, Table};
+use std::{ io::Write };
+use lock_db::{Database, Table, Columns, Column};
 use server::Server;
 use commands::{ Commands };
 
@@ -9,19 +9,19 @@ use crate::commands::Command;
 
 fn use_database(cmd_list: Commands, server: &mut Server) -> Result<(), ()> {
     if cmd_list._v.len() > 0 {
-        let dbs = &server.Databases;
+        let dbs = &server.databases;
         let mut use_index = 0;
         for ind in 0..dbs.len() {
             if dbs[ind].dbname == cmd_list._v[0] {
                 use_index = ind;
             }
         }
-        for ind in 0..server.Databases.len() {
+        for ind in 0..server.databases.len() {
             if use_index != ind {
-                server.Databases[ind].in_use = false;
+                server.databases[ind].in_use = false;
             }
         }
-        server.Databases[use_index].in_use = true;
+        server.databases[use_index].in_use = true;
 
         return Ok(())
     }
@@ -36,9 +36,9 @@ fn create_command<'a>(cmd_list: Commands, server: &mut Server) -> Result<(), ()>
                     let dbname = cmd_list._v[0].clone();
                     let db_name = dbname.clone();
                     let db = Database::new(dbname);
-                    server.Databases.push(db);
+                    server.databases.push(db);
                     
-                    let dbs = &server.Databases;
+                    let dbs = &server.databases;
                     let mut use_index = 0;
                     for ind in 0..dbs.len() {
                         
@@ -46,19 +46,19 @@ fn create_command<'a>(cmd_list: Commands, server: &mut Server) -> Result<(), ()>
                             use_index = ind;
                         }
                     }
-                    for ind in 0..server.Databases.len() {
+                    for ind in 0..server.databases.len() {
                         if use_index != ind {
-                            server.Databases[ind].in_use = false;
+                            server.databases[ind].in_use = false;
                         }
                     }
-                    server.Databases[use_index].in_use = true;
+                    server.databases[use_index].in_use = true;
 
                     return Ok(());
                 }
                 Command::Table => {
                     let tablename: String = cmd_list._v[0].clone();
                     let table = Table::new(tablename);
-                    server.Databases[0].tables.push(table);
+                    server.databases[0].tables.push(table);
                     
                     return Ok(());
                 }
@@ -86,6 +86,43 @@ fn show_help(_cmds: &Commands) {
     println!("      help        Shows this message");
 }
 
+fn run_table_command(cmd_list: Commands, server: &mut Server) -> Result<(),()> {
+    println!("{:?}", cmd_list);
+    if cmd_list._c.len() > 1 {
+        if cmd_list._v.len() > 0 {
+            match cmd_list._c[1] {
+                Command::Add => {
+                    let tblname = cmd_list._v[0].clone();
+                    match cmd_list._c[2] {
+                        Command::Column => {
+                            let colname = cmd_list._v[1].clone();
+                            let val: Column = cmd_list._v[2].clone().try_into().expect("Couldnt convert");
+                            //let _ty: Column = cmd_list._v[1].clone().try_into();
+                            println!("{:?}", val);
+                            let sze = cmd_list._v[3].clone().parse::<u64>().unwrap();
+                            for n in 0..server.databases.len() {
+                                if server.databases[n].in_use {
+                                    for t in 0..server.databases[n].tables.len() {
+                                        if server.databases[n].tables[t].tablename == tblname {
+                                            server.databases[n].tables[t].columns.push(Columns::new(colname.clone(), val, sze));
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        _ => {}
+                    }
+
+                    return Ok(());
+                }
+                _ => {}
+            }
+        }
+    }
+
+    eprintln!("Not enough Parameters Given");
+    Err(())
+}
 
 fn main() {
     let mut server = Server::new(1433);
@@ -119,32 +156,26 @@ fn main() {
                         }                        
                     }
 
-                    // let replaced: Commands = line.split(" ").collect();
-                    //line.clear();
-                    
-                    // for _ in 0..replaced.split(" ").count() {
-                        // let val: Commands = replaced.split(" ").collect(); 
-                    // cmds = replaced;
-                    // }
-                    for c in  &cmds._c {
-                        match c {
-                            Command::Exit => {
-                                exit = true;
-                            }
-                            Command::Create => { 
-                                create_command(cmds.clone(), &mut server).expect("Couldnt Create Object");
-                            }
-                            Command::Use => {
-                                use_database(cmds.clone(), &mut server).expect("Couldnt Use Database.  Database doesn't Exist");
-                            }
-                            Command::Clear => {
-                                clear_screen(&server);
-                            }
-                            Command::Help => {
-                                show_help(&cmds);
-                            }
-                            _ => { },
+                    match &cmds._c[0] {
+                        Command::Exit => {
+                            exit = true;
                         }
+                        Command::Create => { 
+                            create_command(cmds.clone(), &mut server).expect("Couldnt Create Object");
+                        }
+                        Command::Use => {
+                            use_database(cmds.clone(), &mut server).expect("Couldnt Use Database.  Database doesn't Exist");
+                        }
+                        Command::Table => {
+                            run_table_command(cmds.clone(), &mut server).expect("Could not run commands against table.");
+                        }
+                        Command::Clear => {
+                            clear_screen(&server);
+                        }
+                        Command::Help => {
+                            show_help(&cmds);
+                        }
+                        _ => { },
                     }
 
                 }
@@ -158,6 +189,7 @@ fn main() {
         //println!("Should Exit: {}", exit);
     }
 }
+
 
 
 
