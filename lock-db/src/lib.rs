@@ -1,13 +1,14 @@
 #[derive(Debug)]
 pub struct Database {
-    dbname: String,
+    pub in_use: bool,
+    pub dbname: String,
     pub tables: Vec<Table>
 }
 
 #[derive(Debug)]
 pub struct Table {
-    tablename: String,
-    columns: Vec<Columns>
+    pub tablename: String,
+    pub columns: Vec<Columns>
 }
 
 #[derive(Debug)]
@@ -16,6 +17,7 @@ pub struct Columns;
 impl Database {
     pub fn new(dbname: String) -> Self {
         Self {
+            in_use: true,
             dbname,
             tables: Vec::new()
         }

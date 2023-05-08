@@ -6,7 +6,7 @@ pub enum Command {
     Table,
     Clear,
     Help,
-    Space,
+    Use,
 }
 #[derive(Debug, Clone)]
 pub struct Commands {
@@ -22,6 +22,7 @@ impl Command {
             "table" => Ok(Command::Table),
             "database" => Ok(Command::Database),
             "clear" => Ok(Command::Clear),
+            "use" => Ok(Command::Use),
             "?" | "/?" | "help" => Ok(Command::Help),
             _ => Err(val)
         }

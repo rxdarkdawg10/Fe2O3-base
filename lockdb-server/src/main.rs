@@ -7,6 +7,26 @@ use commands::{ Commands };
 
 use crate::commands::Command;
 
+fn use_database(cmd_list: Commands, server: &mut Server) -> Result<(), ()> {
+    if cmd_list._v.len() > 0 {
+        let dbs = &server.Databases;
+        let mut use_index = 0;
+        for ind in 0..dbs.len() {
+            if dbs[ind].dbname == cmd_list._v[0] {
+                use_index = ind;
+            }
+        }
+        for ind in 0..server.Databases.len() {
+            if use_index != ind {
+                server.Databases[ind].in_use = false;
+            }
+        }
+        server.Databases[use_index].in_use = true;
+
+        return Ok(())
+    }
+    return Err(())
+}
 
 fn create_command<'a>(cmd_list: Commands, server: &mut Server) -> Result<(), ()> {
     if cmd_list._c.len() > 1 {
@@ -14,9 +34,24 @@ fn create_command<'a>(cmd_list: Commands, server: &mut Server) -> Result<(), ()>
             match cmd_list._c[1] {
                 Command::Database => {
                     let dbname = cmd_list._v[0].clone();
+                    let db_name = dbname.clone();
                     let db = Database::new(dbname);
                     server.Databases.push(db);
                     
+                    let dbs = &server.Databases;
+                    let mut use_index = 0;
+                    for ind in 0..dbs.len() {
+                        
+                        if dbs[ind].dbname == db_name {
+                            use_index = ind;
+                        }
+                    }
+                    for ind in 0..server.Databases.len() {
+                        if use_index != ind {
+                            server.Databases[ind].in_use = false;
+                        }
+                    }
+                    server.Databases[use_index].in_use = true;
 
                     return Ok(());
                 }
@@ -47,6 +82,7 @@ fn show_help(_cmds: &Commands) {
     println!("      clear       Clears the screen of all output.");
     println!("      create      Create a database object.");
     println!("      exit        Closes the Server");
+    println!("      use         Use Database Object");
     println!("      help        Shows this message");
 }
 
@@ -98,6 +134,9 @@ fn main() {
                             Command::Create => { 
                                 create_command(cmds.clone(), &mut server).expect("Couldnt Create Object");
                             }
+                            Command::Use => {
+                                use_database(cmds.clone(), &mut server).expect("Couldnt Use Database.  Database doesn't Exist");
+                            }
                             Command::Clear => {
                                 clear_screen(&server);
                             }
@@ -119,6 +158,8 @@ fn main() {
         //println!("Should Exit: {}", exit);
     }
 }
+
+
 
 
 
