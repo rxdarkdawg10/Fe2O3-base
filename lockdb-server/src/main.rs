@@ -1,6 +1,6 @@
 mod server; 
 mod commands;
-use std::{ io::Write, env };
+use std::{ io::{Write, BufReader, Read}, env, path::PathBuf, fs::File };
 use lock_db::{Database, Table, Columns, Column};
 use server::Server;
 use commands::{ Commands };
@@ -163,10 +163,11 @@ fn run_table_command(cmd_list: Commands, server: &mut Server) -> Result<(),()> {
     Err(())
 }
 
-fn main() {
+fn main() -> Result<(),()> {
     let args:Vec<String> = env::args().collect();
     let mut port: u16 = 1433;
     let mut db_dir: String = String::from("./dbs/");
+    let mut files_init = true;
     for a in 0..args.len() {
         if args[a] == "-p" {
             port = args[a+1].clone().parse::<u16>().unwrap();
@@ -178,8 +179,26 @@ fn main() {
         }
     }
 
-    println!("{:?}",db_dir);
-    println!("{:?}",port);
+    let _ = std::fs::create_dir_all(&db_dir);
+    let path: PathBuf = PathBuf::from(&db_dir);
+    let mut filepath = PathBuf::new();
+    filepath.push(path);
+    filepath.push("foo.txt");
+    
+    let mut file = File::open(filepath.clone()).map_or_else(|_| {files_init = false; Ok(File::create(filepath).unwrap())}, |v| Ok(v))?;
+
+    if files_init {
+        let mut buf_reader = BufReader::new(file);
+        let mut contents = String::new();
+        buf_reader.read_to_string(&mut contents).expect("Couldnt read file");
+        assert_eq!(contents, "Hello, world!");
+    } else {
+        file.write_all(b"Hello, world!").map_err(|e| eprintln!("{}",e))?;
+        file.flush().map_err(|e| eprintln!("{}",e))?;
+    }
+
+
+
     let mut server = Server::new(port);
     clear_screen(&server);    
     println!("{:?}",db_dir);
@@ -242,8 +261,10 @@ fn main() {
             Err(_) => todo!(),
         }
 
+        
         //println!("Should Exit: {}", exit);
     }
+    Ok(())
 }
 
 
