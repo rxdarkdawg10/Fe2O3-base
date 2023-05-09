@@ -9,6 +9,7 @@ pub enum Command {
     Use,
     Add,
     Column,
+    Show,
 }
 #[derive(Debug, Clone)]
 pub struct Commands {
@@ -27,6 +28,7 @@ impl Command {
             "use" => Ok(Command::Use),
             "add" => Ok(Command::Add),
             "column" => Ok(Command::Column),
+            "show" => Ok(Self::Show),
             "?" | "/?" | "help" => Ok(Command::Help),
             _ => Err(val)
         }

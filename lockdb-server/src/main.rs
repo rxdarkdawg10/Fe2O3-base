@@ -86,17 +86,46 @@ fn show_help(_cmds: &Commands) {
     println!("      help        Shows this message");
 }
 
+fn run_show_command(cmd_list: Commands, server: &Server) -> Result<(),()> {
+    
+    match cmd_list._c[1] {
+        Command::Database => {
+            clear_screen(server);
+            println!("Databases:");
+            println!("Database Name     Table Name");
+            if server.databases.len() > 0 {
+                for d in &server.databases {
+                    if d.tables.len() > 0 {
+                        for t in &d.tables {
+                            println!("{}     {}", d.dbname, t.tablename);
+                        }
+                    } else {
+                        println!("{}     <none>", d.dbname);
+                    }
+                }
+            } else {
+                println!("<none>     <none>");
+            }
+            return Ok(())
+        }
+        Command::Table => {}
+        _ => {}
+    }
+    
+    Err(())
+}
+
 fn run_table_command(cmd_list: Commands, server: &mut Server) -> Result<(),()> {
-    println!("{:?}", cmd_list);
-    if cmd_list._c.len() > 1 {
-        if cmd_list._v.len() > 0 {
+    
+    if cmd_list._c.len() > 2 {
+        if cmd_list._v.len() > 3 {
             match cmd_list._c[1] {
                 Command::Add => {
                     let tblname = cmd_list._v[0].clone();
                     match cmd_list._c[2] {
                         Command::Column => {
                             let colname = cmd_list._v[1].clone();
-                            let val: Column = cmd_list._v[2].clone().try_into().expect("Couldnt convert");
+                            let val: Column = cmd_list._v[2].clone().try_into().map_err(|e| eprintln!("Couldn't Convert: {}",e))?;
                             //let _ty: Column = cmd_list._v[1].clone().try_into();
                             println!("{:?}", val);
                             let sze = cmd_list._v[3].clone().parse::<u64>().unwrap();
@@ -121,6 +150,7 @@ fn run_table_command(cmd_list: Commands, server: &mut Server) -> Result<(),()> {
     }
 
     eprintln!("Not enough Parameters Given");
+    eprintln!("Command Help:\n table <tablename> add column <column_name> <column_type> <column_size>");
     Err(())
 }
 
@@ -161,19 +191,22 @@ fn main() {
                             exit = true;
                         }
                         Command::Create => { 
-                            create_command(cmds.clone(), &mut server).expect("Couldnt Create Object");
+                            let _ = create_command(cmds.clone(), &mut server).map_err(|_| eprintln!("Couldnt Create Object"));
                         }
                         Command::Use => {
-                            use_database(cmds.clone(), &mut server).expect("Couldnt Use Database.  Database doesn't Exist");
+                            let _ = use_database(cmds.clone(), &mut server).map_err(|_| eprintln!("Couldnt Use Database.  Database doesn't Exist"));
                         }
                         Command::Table => {
-                            run_table_command(cmds.clone(), &mut server).expect("Could not run commands against table.");
+                            let _ = run_table_command(cmds.clone(), &mut server).map_err(|_| eprintln!("Could not run commands against table."));
                         }
                         Command::Clear => {
                             clear_screen(&server);
                         }
                         Command::Help => {
                             show_help(&cmds);
+                        }
+                        Command::Show => {
+                            let _ = run_show_command(cmds.clone(), &server);
                         }
                         _ => { },
                     }
@@ -183,12 +216,11 @@ fn main() {
             Err(_) => todo!(),
         }
 
-
-        println!("{:?}", server);
-
         //println!("Should Exit: {}", exit);
     }
 }
+
+
 
 
 

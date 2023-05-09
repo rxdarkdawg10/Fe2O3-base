@@ -55,28 +55,16 @@ impl Columns {
 
 
 impl TryInto<Column> for String {
-    type Error = ();
+    type Error = String;
     
     fn try_into(self) -> Result<Column, Self::Error> {
         match self.as_str() {
             "number" => Ok(Column::Number),
             "string" => Ok(Column::String),
             "binary" => Ok(Column::Binary),
-            _ => Err(())
+            _ => Err(String::from("Column Type Not supported"))
         }
     }
-    // type Error = ();
-
-    // fn try_into(self) -> Result<Column, Self::Error> {
-    //         match self.as_str() {
-    //         "number" => {
-    //             Ok(Column::Number)
-    //         }
-    //     }
-
-    //     Err(())
-    // }
-
 }
 
 
