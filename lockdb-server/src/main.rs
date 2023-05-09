@@ -1,6 +1,6 @@
 mod server; 
 mod commands;
-use std::{ io::Write };
+use std::{ io::Write, env };
 use lock_db::{Database, Table, Columns, Column};
 use server::Server;
 use commands::{ Commands };
@@ -164,9 +164,26 @@ fn run_table_command(cmd_list: Commands, server: &mut Server) -> Result<(),()> {
 }
 
 fn main() {
-    let mut server = Server::new(1433);
+    let args:Vec<String> = env::args().collect();
+    let mut port: u16 = 1433;
+    let mut db_dir: String = String::from("./dbs/");
+    for a in 0..args.len() {
+        if args[a] == "-p" {
+            port = args[a+1].clone().parse::<u16>().unwrap();
+        }
+
+        if args[a] == "-db_dir" {
+            //port = args[a+1].clone().parse::<u16>().unwrap();
+            db_dir = args[a+1].clone();
+        }
+    }
+
+    println!("{:?}",db_dir);
+    println!("{:?}",port);
+    let mut server = Server::new(port);
     clear_screen(&server);    
-    
+    println!("{:?}",db_dir);
+    println!("{:?}",port);
     let mut exit = false;
     
     while !exit {
