@@ -92,23 +92,33 @@ fn run_show_command(cmd_list: Commands, server: &Server) -> Result<(),()> {
         Command::Database => {
             clear_screen(server);
             println!("Databases:");
-            println!("Database Name     Table Name");
-            if server.databases.len() > 0 {
-                for d in &server.databases {
-                    if d.tables.len() > 0 {
-                        for t in &d.tables {
-                            println!("{}     {}", d.dbname, t.tablename);
-                        }
-                    } else {
-                        println!("{}     <none>", d.dbname);
+            for d in &server.databases {
+                println!("{}", d.dbname);
+                println!("\tTables:");
+                    for t in &d.tables {
+                        println!("\t\t{}",t.tablename);
                     }
-                }
-            } else {
-                println!("<none>     <none>");
             }
             return Ok(())
         }
-        Command::Table => {}
+        Command::Table => {
+            clear_screen(server);            
+            if cmd_list._v.len() > 0 {
+                for d in &server.databases {
+                    for t in &d.tables {
+                        if t.tablename == cmd_list._v[0] {
+                            println!("Table: {}", t.tablename);
+                            for c in &t.columns {
+                                println!("\t{}\t\t{}\t\t{}", c.colname, c.coltype, c.colsize);
+                            }
+                            
+                        }
+                        
+                    }
+                }
+                return Ok(())
+            }
+        }
         _ => {}
     }
     
@@ -126,8 +136,7 @@ fn run_table_command(cmd_list: Commands, server: &mut Server) -> Result<(),()> {
                         Command::Column => {
                             let colname = cmd_list._v[1].clone();
                             let val: Column = cmd_list._v[2].clone().try_into().map_err(|e| eprintln!("Couldn't Convert: {}",e))?;
-                            //let _ty: Column = cmd_list._v[1].clone().try_into();
-                            println!("{:?}", val);
+                            
                             let sze = cmd_list._v[3].clone().parse::<u64>().unwrap();
                             for n in 0..server.databases.len() {
                                 if server.databases[n].in_use {

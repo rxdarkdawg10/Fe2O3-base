@@ -53,6 +53,16 @@ impl Columns {
     }
 }
 
+impl std::fmt::Display for Column {
+    
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Column::String => write!(f, "String"),
+            Column::Number => write!(f, "Number"),
+            Column::Binary => write!(f, "Binary"),
+        }
+    }
+}
 
 impl TryInto<Column> for String {
     type Error = String;
