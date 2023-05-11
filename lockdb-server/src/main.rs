@@ -28,7 +28,7 @@ fn use_database(cmd_list: Commands, server: &mut Server) -> Result<(), ()> {
     return Err(())
 }
 
-fn create_command<'a>(cmd_list: Commands, server: &mut Server) -> Result<(), ()> {
+fn create_command(cmd_list: Commands, server: &mut Server) -> Result<(), ()> {
     if cmd_list._c.len() > 1 {
         if cmd_list._v.len() > 0 {
             match cmd_list._c[1] {
@@ -163,6 +163,44 @@ fn run_table_command(cmd_list: Commands, server: &mut Server) -> Result<(),()> {
     Err(())
 }
 
+
+fn write_config(file: &mut File, server: &Server) -> Result<(),()> {
+    file.write_all(b"LOCKDB").map_err(|e| eprintln!("{}",e))?;
+    file.write_all(b"Version: 0.1").map_err(|e| eprintln!("{}",e))?;
+    file.write_all(b"Configuration").map_err(|e| eprintln!("{}",e))?;
+
+
+
+    //TODO: Create server config here.
+    println!("{:?}",server);
+
+
+
+    file.write_all(b"\0").map_err(|e| eprintln!("{}",e))?;
+    file.flush().map_err(|e| eprintln!("{}",e))?;
+
+    Ok(())
+}
+
+
+fn handle_db_file(contents: &[u8], filepath: PathBuf, server: &Server) -> Result<(),()> {
+    let mut isvalid = true;
+    let mut file = File::open(filepath.clone()).map_err(|_| eprintln!("Error reading file"))?;
+
+    println!("{:?}", contents);
+
+    if isvalid {
+        Ok(())
+    } else {
+        _ = write_config(&mut file, &server);
+        Ok(())
+    }
+
+    
+}
+
+
+
 fn main() -> Result<(),()> {
     let args:Vec<String> = env::args().collect();
     let mut port: u16 = 1433;
@@ -179,28 +217,31 @@ fn main() -> Result<(),()> {
         }
     }
 
+    let mut server = Server::new(port);
+
     let _ = std::fs::create_dir_all(&db_dir);
     let path: PathBuf = PathBuf::from(&db_dir);
     let mut filepath = PathBuf::new();
     filepath.push(path);
-    filepath.push("foo.txt");
+    filepath.push("db.ldb");
     
-    let mut file = File::open(filepath.clone()).map_or_else(|_| {files_init = false; Ok(File::create(filepath).unwrap())}, |v| Ok(v))?;
+    let mut file = File::open(filepath.clone()).map_or_else(|_| {files_init = false; Ok(File::create(filepath.clone()).unwrap())}, |v| Ok(v))?;
 
     if files_init {
         let mut buf_reader = BufReader::new(file);
-        let mut contents = String::new();
-        buf_reader.read_to_string(&mut contents).expect("Couldnt read file");
-        assert_eq!(contents, "Hello, world!");
+        let mut contents = Vec::new();
+        buf_reader.read_to_end(&mut contents).expect("Couldnt read file");
+        _ = handle_db_file(&contents, filepath.clone(), &server);
+        println!("{:?}",String::from_utf8(contents));
     } else {
-        file.write_all(b"Hello, world!").map_err(|e| eprintln!("{}",e))?;
-        file.flush().map_err(|e| eprintln!("{}",e))?;
+        _ = write_config(&mut file, &server);
     }
 
 
 
-    let mut server = Server::new(port);
-    clear_screen(&server);    
+
+    
+    //clear_screen(&server);    
     println!("{:?}",db_dir);
     println!("{:?}",port);
     let mut exit = false;
@@ -266,12 +307,5 @@ fn main() -> Result<(),()> {
     }
     Ok(())
 }
-
-
-
-
-
-
-
 
 
