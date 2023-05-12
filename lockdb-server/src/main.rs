@@ -164,35 +164,50 @@ fn run_table_command(cmd_list: Commands, server: &mut Server) -> Result<(),()> {
 }
 
 
-fn write_config(file: &mut File, server: &Server) -> Result<(),()> {
-    file.write_all(b"LOCKDB").map_err(|e| eprintln!("{}",e))?;
-    file.write_all(b"Version: 0.1").map_err(|e| eprintln!("{}",e))?;
-    file.write_all(b"Configuration").map_err(|e| eprintln!("{}",e))?;
-
-
+fn write_config(filepath: PathBuf, server: &Server) -> Result<(),()> {
+    println!("Writing new Config");
+    let mut file = File::create(filepath.clone()).map_err(|_| eprintln!("Error reading file"))?;
+    file.write_all(b"LOCKDB\0").map_err(|e| eprintln!("{}",e))?;
+    
+    file.write_all(b"Version:1\0").map_err(|e| eprintln!("{}",e))?;
+    //file.write_all(&v_bytes).map_err(|e| eprintln!("{}",e))?;
+    file.write_all(b"Configuration: {").map_err(|e| eprintln!("{}",e))?;
 
     //TODO: Create server config here.
     println!("{:?}",server);
 
-
-
-    file.write_all(b"\0").map_err(|e| eprintln!("{}",e))?;
+    file.write_all(b"}\0").map_err(|e| eprintln!("{}",e))?;
+    
     file.flush().map_err(|e| eprintln!("{}",e))?;
 
     Ok(())
 }
 
+fn get_config_section(contents: &[u8]) -> Result<String,()> {
+
+
+    Ok(String::from(""))
+}
+
 
 fn handle_db_file(contents: &[u8], filepath: PathBuf, server: &Server) -> Result<(),()> {
-    let mut isvalid = true;
+    let mut isvalid = false;
     let mut file = File::open(filepath.clone()).map_err(|_| eprintln!("Error reading file"))?;
 
-    println!("{:?}", contents);
+    println!("{:?}", String::from_utf8(contents.into()));
+
+    let config = String::from_utf8(contents.into()).map_err(|_| eprintln!("Couldnt enforce strings"))?;
+    let config:Vec<&str> = config.split("\0").collect();
+    for f in config {
+        if f.starts_with("Configuration:") {
+            println!("{}",f);
+        }
+    }
 
     if isvalid {
         Ok(())
     } else {
-        _ = write_config(&mut file, &server);
+        _ = write_config(filepath, &server);
         Ok(())
     }
 
@@ -225,16 +240,16 @@ fn main() -> Result<(),()> {
     filepath.push(path);
     filepath.push("db.ldb");
     
-    let mut file = File::open(filepath.clone()).map_or_else(|_| {files_init = false; Ok(File::create(filepath.clone()).unwrap())}, |v| Ok(v))?;
+    let file = File::open(filepath.clone()).map_or_else(|_| {files_init = false; Ok(File::create(filepath.clone()).unwrap())}, |v| Ok(v))?;
 
     if files_init {
         let mut buf_reader = BufReader::new(file);
         let mut contents = Vec::new();
+        
         buf_reader.read_to_end(&mut contents).expect("Couldnt read file");
         _ = handle_db_file(&contents, filepath.clone(), &server);
-        println!("{:?}",String::from_utf8(contents));
     } else {
-        _ = write_config(&mut file, &server);
+        _ = write_config(filepath, &server);
     }
 
 
@@ -242,8 +257,7 @@ fn main() -> Result<(),()> {
 
     
     //clear_screen(&server);    
-    println!("{:?}",db_dir);
-    println!("{:?}",port);
+
     let mut exit = false;
     
     while !exit {
