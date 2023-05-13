@@ -24,11 +24,34 @@ impl Server {
         result.push_str("Databases: [");
         for d in 0..self.databases.len() {
             result.push_str("{");
+            //dbname
             result.push_str("dbname: \"");
             result.push_str(self.databases[d].dbname.as_str());
-            result.push_str("\"");
+            result.push_str("\",");
 
-            result.push_str("}");
+            //dbsize
+            result.push_str("dbsize: ");
+            result.push_str(self.databases[d].dbsize.to_string().as_str());
+            result.push_str(",");
+
+            //tables
+            result.push_str("Tables: [");
+            for t in 0..self.databases[d].tables.len() {
+                result.push_str("{");
+                //dbname
+                result.push_str("tblname: \"");
+                result.push_str(self.databases[d].tables[t].tablename.as_str());
+                result.push_str("\",");
+                //dbname
+                result.push_str("tblsize: \"");
+                result.push_str(self.databases[d].tables[t].tblsize.to_string().as_str());
+                result.push_str("\",");
+
+                result.push_str("},");
+            }
+            result.push_str("]");
+
+            result.push_str("},");
         }
         result.push_str("]");
 

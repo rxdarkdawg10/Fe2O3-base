@@ -2,12 +2,14 @@
 pub struct Database {
     pub in_use: bool,
     pub dbname: String,
+    pub dbsize: usize,
     pub tables: Vec<Table>
 }
 
 #[derive(Debug)]
 pub struct Table {
     pub tablename: String,
+    pub tblsize: usize,
     pub columns: Vec<Columns>
 }
 
@@ -15,7 +17,7 @@ pub struct Table {
 pub struct Columns {
     pub colname: String,
     pub coltype: Column,
-    pub colsize: u64
+    pub colsize: usize
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -30,6 +32,7 @@ impl Database {
         Self {
             in_use: true,
             dbname,
+            dbsize: 0,
             tables: Vec::new()
         }
     }
@@ -39,7 +42,8 @@ impl Table {
     pub fn new(table_name: String) -> Self {
         Self {
             tablename: table_name,
-            columns: Vec::new()
+            columns: Vec::new(),
+            tblsize: 0,
         }
     }
 }
@@ -48,7 +52,7 @@ impl Table {
  
 
 impl Columns {
-    pub fn new(colname: String, _ty: Column, size: u64) -> Self {
+    pub fn new(colname: String, _ty: Column, size: usize) -> Self {
         Self { colname, coltype: _ty, colsize: size }
     }
 }

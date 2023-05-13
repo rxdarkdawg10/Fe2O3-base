@@ -62,6 +62,8 @@ fn create_command(cmd_list: Commands, server: &mut Server) -> Result<(), ()> {
                     let table = Table::new(tablename);
                     server.databases[0].tables.push(table);
                     
+
+                    write_config(server.filepath.clone(), server);
                     return Ok(());
                 }
                 _ => {}
@@ -139,7 +141,7 @@ fn run_table_command(cmd_list: Commands, server: &mut Server) -> Result<(),()> {
                             let colname = cmd_list._v[1].clone();
                             let val: Column = cmd_list._v[2].clone().try_into().map_err(|e| eprintln!("Couldn't Convert: {}",e))?;
                             
-                            let sze = cmd_list._v[3].clone().parse::<u64>().unwrap();
+                            let sze = cmd_list._v[3].clone().parse::<usize>().unwrap();
                             for n in 0..server.databases.len() {
                                 if server.databases[n].in_use {
                                     for t in 0..server.databases[n].tables.len() {
