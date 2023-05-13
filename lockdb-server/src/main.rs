@@ -53,6 +53,8 @@ fn create_command(cmd_list: Commands, server: &mut Server) -> Result<(), ()> {
                     }
                     server.databases[use_index].in_use = true;
 
+                    write_config(server.filepath.clone(), server);
+
                     return Ok(());
                 }
                 Command::Table => {
@@ -177,6 +179,10 @@ fn write_config(filepath: PathBuf, server: &Server) -> Result<(),()> {
     println!("{:?}",server);
 
     file.write_all(b"}\0").map_err(|e| eprintln!("{}",e))?;
+
+    //Database Schema
+    let schema = server.get_schema_as_json().map_err(|_| eprintln!("Error building Schema"))?;
+    file.write_all(schema.as_bytes()).map_err(|e| eprintln!("{}",e))?;
     
     file.flush().map_err(|e| eprintln!("{}",e))?;
 
@@ -233,13 +239,14 @@ fn main() -> Result<(),()> {
     }
 
     let mut server = Server::new(port);
+    
 
     let _ = std::fs::create_dir_all(&db_dir);
     let path: PathBuf = PathBuf::from(&db_dir);
     let mut filepath = PathBuf::new();
     filepath.push(path);
     filepath.push("db.ldb");
-    
+    server.filepath = filepath.clone();
     let file = File::open(filepath.clone()).map_or_else(|_| {files_init = false; Ok(File::create(filepath.clone()).unwrap())}, |v| Ok(v))?;
 
     if files_init {
