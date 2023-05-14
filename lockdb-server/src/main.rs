@@ -8,11 +8,11 @@ use commands::{ Commands };
 use crate::commands::Command;
 
 fn use_database(cmd_list: Commands, server: &mut Server) -> Result<(), ()> {
-    if cmd_list._v.len() > 0 {
+    if !cmd_list._v.is_empty() {
         let dbs = &server.databases;
         let mut use_index = 0;
-        for ind in 0..dbs.len() {
-            if dbs[ind].dbname == cmd_list._v[0] {
+        for (ind, db) in dbs.iter().enumerate() {
+            if db.dbname == cmd_list._v[0] {
                 use_index = ind;
             }
         }
@@ -25,49 +25,47 @@ fn use_database(cmd_list: Commands, server: &mut Server) -> Result<(), ()> {
 
         return Ok(())
     }
-    return Err(())
+    Err(())
 }
 
 fn create_command(cmd_list: Commands, server: &mut Server) -> Result<(), ()> {
-    if cmd_list._c.len() > 1 {
-        if cmd_list._v.len() > 0 {
-            match cmd_list._c[1] {
-                Command::Database => {
-                    let dbname = cmd_list._v[0].clone();
-                    let db_name = dbname.clone();
-                    let db = Database::new(dbname);
-                    server.databases.push(db);
+    if cmd_list._c.len() > 1  && !cmd_list._v.is_empty() {
+        match cmd_list._c[1] {
+            Command::Database => {
+                let dbname = cmd_list._v[0].clone();
+                let db_name = dbname.clone();
+                let db = Database::new(dbname);
+                server.databases.push(db);
+                
+                let dbs = &server.databases;
+                let mut use_index = 0;
+                for (ind, db) in dbs.iter().enumerate() {
                     
-                    let dbs = &server.databases;
-                    let mut use_index = 0;
-                    for ind in 0..dbs.len() {
-                        
-                        if dbs[ind].dbname == db_name {
-                            use_index = ind;
-                        }
+                    if db.dbname == db_name {
+                        use_index = ind;
                     }
-                    for ind in 0..server.databases.len() {
-                        if use_index != ind {
-                            server.databases[ind].in_use = false;
-                        }
+                }
+                for ind in 0..server.databases.len() {
+                    if use_index != ind {
+                        server.databases[ind].in_use = false;
                     }
-                    server.databases[use_index].in_use = true;
-
-                    write_config(server.filepath.clone(), server);
-
-                    return Ok(());
                 }
-                Command::Table => {
-                    let tablename: String = cmd_list._v[0].clone();
-                    let table = Table::new(tablename);
-                    server.databases[0].tables.push(table);
-                    
+                server.databases[use_index].in_use = true;
 
-                    write_config(server.filepath.clone(), server);
-                    return Ok(());
-                }
-                _ => {}
+                _ = write_config(server.filepath.clone(), server);
+
+                return Ok(());
             }
+            Command::Table => {
+                let tablename: String = cmd_list._v[0].clone();
+                let table = Table::new(tablename);
+                server.databases[0].tables.push(table);
+                
+
+                _ = write_config(server.filepath.clone(), server);
+                return Ok(());
+            }
+            _ => {}
         }
     }
 
@@ -77,7 +75,7 @@ fn create_command(cmd_list: Commands, server: &mut Server) -> Result<(), ()> {
 
 fn clear_screen(server: &Server) {
     print!("\x1b[2J\x1b[1;1H"); //x1b[2J clear screen // \x1b[1;1h position row1:col1
-    println!("Welcome to Lock Database Server v:{v}", v = "0.0.1a");
+    println!("Welcome to Lock Database Server v:0.0.1a");
     println!("Server Running on Port: {}", server._port);
 }
 
@@ -107,7 +105,7 @@ fn run_show_command(cmd_list: Commands, server: &Server) -> Result<(),()> {
         }
         Command::Table => {
             clear_screen(server);            
-            if cmd_list._v.len() > 0 {
+            if !cmd_list._v.is_empty() {
                 for d in &server.databases {
                     for t in &d.tables {
                         if t.tablename == cmd_list._v[0] {
@@ -131,34 +129,32 @@ fn run_show_command(cmd_list: Commands, server: &Server) -> Result<(),()> {
 
 fn run_table_command(cmd_list: Commands, server: &mut Server) -> Result<(),()> {
     
-    if cmd_list._c.len() > 2 {
-        if cmd_list._v.len() > 3 {
-            match cmd_list._c[1] {
-                Command::Add => {
-                    let tblname = cmd_list._v[0].clone();
-                    match cmd_list._c[2] {
-                        Command::Column => {
-                            let colname = cmd_list._v[1].clone();
-                            let val: Column = cmd_list._v[2].clone().try_into().map_err(|e| eprintln!("Couldn't Convert: {}",e))?;
-                            
-                            let sze = cmd_list._v[3].clone().parse::<usize>().unwrap();
-                            for n in 0..server.databases.len() {
-                                if server.databases[n].in_use {
-                                    for t in 0..server.databases[n].tables.len() {
-                                        if server.databases[n].tables[t].tablename == tblname {
-                                            server.databases[n].tables[t].columns.push(Columns::new(colname.clone(), val, sze));
-                                        }
+    if cmd_list._c.len() > 2 && cmd_list._v.len() > 3 {
+        match cmd_list._c[1] {
+            Command::Add => {
+                let tblname = cmd_list._v[0].clone();
+                match cmd_list._c[2] {
+                    Command::Column => {
+                        let colname = cmd_list._v[1].clone();
+                        let val: Column = cmd_list._v[2].clone().try_into().map_err(|e| eprintln!("Couldn't Convert: {}",e))?;
+                        
+                        let sze = cmd_list._v[3].clone().parse::<usize>().unwrap();
+                        for n in 0..server.databases.len() {
+                            if server.databases[n].in_use {
+                                for t in 0..server.databases[n].tables.len() {
+                                    if server.databases[n].tables[t].tablename == tblname {
+                                        server.databases[n].tables[t].columns.push(Columns::new(colname.clone(), val, sze));
                                     }
                                 }
                             }
                         }
-                        _ => {}
                     }
-
-                    return Ok(());
+                    _ => {}
                 }
-                _ => {}
+
+                return Ok(());
             }
+            _ => {}
         }
     }
 
@@ -170,7 +166,7 @@ fn run_table_command(cmd_list: Commands, server: &mut Server) -> Result<(),()> {
 
 fn write_config(filepath: PathBuf, server: &Server) -> Result<(),()> {
     println!("Writing new Config");
-    let mut file = File::create(filepath.clone()).map_err(|_| eprintln!("Error reading file"))?;
+    let mut file = File::create(filepath).map_err(|_| eprintln!("Error reading file"))?;
     file.write_all(b"LOCKDB\0").map_err(|e| eprintln!("{}",e))?;
     
     file.write_all(b"Version:1\0").map_err(|e| eprintln!("{}",e))?;
@@ -191,21 +187,21 @@ fn write_config(filepath: PathBuf, server: &Server) -> Result<(),()> {
     Ok(())
 }
 
-fn get_config_section(contents: &[u8]) -> Result<String,()> {
+// fn get_config_section(contents: &[u8]) -> Result<String,()> {
 
 
-    Ok(String::from(""))
-}
+//     Ok(String::from(""))
+// }
 
 
 fn handle_db_file(contents: &[u8], filepath: PathBuf, server: &Server) -> Result<(),()> {
-    let mut isvalid = false;
-    let mut file = File::open(filepath.clone()).map_err(|_| eprintln!("Error reading file"))?;
+    let isvalid = false;
+    //let mut file = File::open(filepath.clone()).map_err(|_| eprintln!("Error reading file"))?;
 
     println!("{:?}", String::from_utf8(contents.into()));
 
     let config = String::from_utf8(contents.into()).map_err(|_| eprintln!("Couldnt enforce strings"))?;
-    let config:Vec<&str> = config.split("\0").collect();
+    let config:Vec<&str> = config.split('\0').collect();
     for f in config {
         if f.starts_with("Configuration:") {
             println!("{}",f);
@@ -215,7 +211,7 @@ fn handle_db_file(contents: &[u8], filepath: PathBuf, server: &Server) -> Result
     if isvalid {
         Ok(())
     } else {
-        _ = write_config(filepath, &server);
+        _ = write_config(filepath, server);
         Ok(())
     }
 
@@ -249,7 +245,7 @@ fn main() -> Result<(),()> {
     filepath.push(path);
     filepath.push("db.ldb");
     server.filepath = filepath.clone();
-    let file = File::open(filepath.clone()).map_or_else(|_| {files_init = false; Ok(File::create(filepath.clone()).unwrap())}, |v| Ok(v))?;
+    let file = File::open(filepath.clone()).map_or_else(|_| {files_init = false; Ok(File::create(filepath.clone()).unwrap())}, |v| {Ok(v)})?;
 
     if files_init {
         let mut buf_reader = BufReader::new(file);
@@ -278,9 +274,9 @@ fn main() -> Result<(),()> {
         match std::io::stdin().read_line(&mut line) {
             Ok(n) => {
                 if n > 0 {
-                    let tmp = line.replace("\n", "");
+                    let tmp = line.replace('\n', "");
                     let tmp2 = tmp.to_owned();
-                    let tmp3 = tmp2.split(" ").to_owned();
+                    let tmp3 = tmp2.split(' ').to_owned();
                     let tmp4 = tmp3.collect::<Vec<_>>();
 
                     for t in tmp4 {

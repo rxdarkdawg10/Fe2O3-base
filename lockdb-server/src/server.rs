@@ -23,7 +23,7 @@ impl Server {
 
         result.push_str("Databases: [");
         for d in 0..self.databases.len() {
-            result.push_str("{");
+            result.push('{');
             //dbname
             result.push_str("dbname: \"");
             result.push_str(self.databases[d].dbname.as_str());
@@ -32,12 +32,12 @@ impl Server {
             //dbsize
             result.push_str("dbsize: ");
             result.push_str(self.databases[d].dbsize.to_string().as_str());
-            result.push_str(",");
+            result.push(',');
 
             //tables
             result.push_str("Tables: [");
             for t in 0..self.databases[d].tables.len() {
-                result.push_str("{");
+                result.push('{');
                 //dbname
                 result.push_str("tblname: \"");
                 result.push_str(self.databases[d].tables[t].tablename.as_str());
@@ -49,11 +49,11 @@ impl Server {
 
                 result.push_str("},");
             }
-            result.push_str("]");
+            result.push(']');
 
             result.push_str("},");
         }
-        result.push_str("]");
+        result.push(']');
 
         result.push_str("}\0");
         Ok(result)
