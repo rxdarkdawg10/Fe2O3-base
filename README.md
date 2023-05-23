@@ -1,4 +1,4 @@
-# lock-database
+# Fe2O3-base
 A simple In Memory Database utilizing JSON Objects and direct tie to Web Interfaces similar to Graph style Databases.
 
 This database software has redundancy using file objects.
